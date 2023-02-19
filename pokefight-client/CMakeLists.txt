@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-set (SRC "main.cpp" "main.h" "window.cpp" "window.h" "anim.cpp" "anim.h" "events.cpp" "events.h" "menu.h" "menu.cpp" "texture.h" "texture.cpp" "pictures.cpp" "pictures.h" "input.cpp" "input.h" "utils.cpp" "utils.h" "message.cpp" "message.h" "pokemons.cpp" "pokemons.h" "../pokefight-common/ip.cpp" "../pokefight-common/ip.h" "../pokefight-common/player.h" "../pokefight-common/player.cpp" "settings.cpp" "settings.h" "../pokefight-common/const.h")
+set (SRC "main.cpp" "main.h" "window.cpp" "window.h" "anim.cpp" "anim.h" "events.cpp" "events.h" "menu.h" "menu.cpp" "texture.h" "texture.cpp" "pictures.cpp" "pictures.h" "input.cpp" "input.h" "utils.h" "utils.cpp" "../pokefight-common/utils.cpp" "../pokefight-common/utils.h" "message.cpp" "message.h" "pokemons.cpp" "pokemons.h" "../pokefight-common/ip.cpp" "../pokefight-common/ip.h" "../pokefight-common/player.h" "../pokefight-common/player.cpp" "settings.cpp" "settings.h" "../pokefight-common/const.h" "hud.cpp" "hud.h" "toaster.cpp" "toaster.h" "../pokefight-common/attack.h" "../pokefight-common/attack.cpp" "../pokefight-common/utils.cpp" "../pokefight-common/utils.h")
 add_executable ("pokefight-client" ${SRC} "res.rc")
 
 include_directories (SRC ${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIR} ${SDL2_IMAGE_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR} ${SDL2_GFX_INCLUDE_DIR} ${SDL2_NET_INCLUDE_DIR})

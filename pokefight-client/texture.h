@@ -20,6 +20,7 @@ public:
 
 	void set_pos_dst(const int x, const int y);
 	void render(const Window& window);
+	void render_without_pos_dst(const Window& window);
 	int get_width();
 	int get_height();
 };

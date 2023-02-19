@@ -1,11 +1,12 @@
 
+#include "main.h"
 #include "message.h"
 #include "window.h"
 #include "utils.h"
 #include <string>
 #include <SDL2/SDL.h>
 
-void Message::show_message(Window& window, const std::string& message, const bool is_utf8) {
+void Message::show_message_battle(Window& window, const std::string& message, const bool is_utf8, const Pokemons& pokemons, const std::shared_ptr<Player>& my_player_ptr, const std::vector<std::shared_ptr<Player>>& other_players_ptr) {
 	int finished = false;
 	Uint64 first_ticks = SDL_GetTicks64();
 	SDL_Color text_color = { 0, 0, 0, 255 };
@@ -31,16 +32,18 @@ void Message::show_message(Window& window, const std::string& message, const boo
 
 		window.render_clear();
 
-		SDL_Rect pos_dst = { .x = 20, .y = window.get_height() - 70, .w = window.get_height(), .h = 70 };
-		SDL_RenderDrawRect(window.get_renderer(), &pos_dst);
+		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 
 		std::string to_show(message.substr(0, num_letters_to_show));
 		if (!to_show.empty()) {
-			SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), to_show, text_color);
+			SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), to_show, text_color, is_utf8);
 			SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
+			pos_dst.y -= pos_dst.h;
 			SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 			SDL_DestroyTexture(texture);
 		}
+
+		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		window.render_present();
 	}
@@ -57,13 +60,16 @@ void Message::show_message(Window& window, const std::string& message, const boo
 
 		window.render_clear();
 
-		SDL_Rect pos_dst = { .x = 20, .y = window.get_height() - 70, .w = window.get_height(), .h = 70 };
+		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 		SDL_RenderDrawRect(window.get_renderer(), &pos_dst);
 
-		SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), message, text_color);
+		SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), message, text_color, is_utf8);
 		SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
+		pos_dst.y -= pos_dst.h;
 		SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 		SDL_DestroyTexture(texture);
+
+		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		window.render_present();
 

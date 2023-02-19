@@ -1,17 +1,23 @@
 #include "input.h"
 #include "events.h"
 #include "window.h"
+#include "../pokefight-common/const.h"
 #include "utils.h"
 #include <SDL2/SDL.h>
 #include <string>
+#include <algorithm>
 
-Input::Input(const std::string& title, TTF_Font* font, const std::string& default_input_value) {
+Input::Input(const std::string& title, TTF_Font* font, const std::string& default_input_value, const bool replace_forbidden_chars) {
 	_title = title;
 	_font = font;
 	_current_input = default_input_value;
+	_replace_forbidden_chars = replace_forbidden_chars;
+	if (_replace_forbidden_chars)
+		std::replace(_current_input.begin(), _current_input.end(), MESSAGE_WORD_DELIMITER, '_');
+	
 }
 
-int Input::show_input_menu(Window& window) {
+int Input::show_input_menu(Window& window, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
 	int res = InputEndAction::ENTER;
 
 	while (true) {
@@ -25,11 +31,17 @@ int Input::show_input_menu(Window& window) {
 
 			window.press_up_key(SDL_SCANCODE_BACKSPACE);
 		} else {
-			_current_input += window.get_text();
+			std::string str_to_cancat = window.get_text();
+			if (_replace_forbidden_chars)
+				std::replace(str_to_cancat.begin(), str_to_cancat.end(), MESSAGE_WORD_DELIMITER, '_');
+			_current_input += str_to_cancat;
 		}
 
 		if (SDL_GetModState() & KMOD_CTRL && window.is_key_down(SDL_SCANCODE_V)) {
-			_current_input += SDL_GetClipboardText();
+			std::string str_to_cancat = SDL_GetClipboardText();
+			if (_replace_forbidden_chars)
+				std::replace(str_to_cancat.begin(), str_to_cancat.end(), MESSAGE_WORD_DELIMITER, '_');
+			_current_input += str_to_cancat;
 
 			window.press_up_key(SDL_SCANCODE_V);
 		}
@@ -47,6 +59,9 @@ int Input::show_input_menu(Window& window) {
 		}
 
 		window.render_clear();
+		menu_texture->render_without_pos_dst(window);
+		title_texture->set_pos_dst(window.get_width() / 2 - title_texture->get_width() / 2, 80);
+		title_texture->render(window);
 		render_input(window);
 		window.render_present();
 	}

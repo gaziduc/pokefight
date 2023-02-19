@@ -5,6 +5,7 @@
 #include "input.h"
 #include "menu.h"
 #include "utils.h"
+#include "toaster.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -46,7 +47,9 @@ void Window::init() {
 	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) == -1)
 		throw std::runtime_error("Error while initializing SDL2_mixer:\n" + std::string(Mix_GetError()));
 
-	_window = SDL_CreateWindow(_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _initial_width, _initial_height, SDL_WINDOW_RESIZABLE);
+	_sfx.emplace(Sound::HIT, Mix_LoadWAV("data/hit.wav"));
+
+	_window = SDL_CreateWindow(_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 	if (_window == nullptr)
 		throw std::runtime_error("Error while creating window:\n" + std::string(SDL_GetError()));
 
@@ -62,8 +65,9 @@ void Window::init() {
 	_pics.add_texture(*this, Picture::POKEBALL_ICON, "data/pokeball.png");
 
 	// Fonts
-	_fonts.emplace(FontSize::SMALL, TTF_OpenFont("data/segoeui.ttf", 25));
-	_fonts.emplace(FontSize::NORMAL, TTF_OpenFont("data/segoeui.ttf", 35));
+	_fonts.emplace(FontSize::VERY_SMALL, TTF_OpenFont("data/segoeui.ttf", 18));
+	_fonts.emplace(FontSize::SMALL, TTF_OpenFont("data/segoeui.ttf", 24));
+	_fonts.emplace(FontSize::NORMAL, TTF_OpenFont("data/segoeui.ttf", 34));
 
 	// Settings
 	_settings.load_settings();
@@ -81,14 +85,18 @@ void Window::init() {
 }
 
 Window::~Window() {
-	for (auto& font_key_value : _fonts) {
-		TTF_CloseFont(font_key_value.second);
-	}
-
 	if (_renderer != nullptr)
 		SDL_DestroyRenderer(_renderer);
 	if (_window != nullptr)
 		SDL_DestroyWindow(_window);
+
+	for (auto& font_key_value : _fonts) {
+		TTF_CloseFont(font_key_value.second);
+	}
+
+	for (auto& sfx : _sfx) {
+		Mix_FreeChunk(sfx.second);
+	}
 
 	Mix_CloseAudio();
 	SDLNet_Quit();
@@ -120,12 +128,18 @@ TTF_Font* Window::get_font(const FontSize font_size) const {
 	return _fonts.at(font_size);
 }
 
+void Window::play_sound(const Sound sound_num) const {
+	Mix_PlayChannel(-1, _sfx.at(sound_num), 0);
+}
+
 void Window::render_clear() const {
 	SDL_SetRenderDrawColor(_renderer, 135, 206, 235, 255);
 	SDL_RenderClear(_renderer);
 }
 
 void Window::render_present() {
+	show_toasters();
+
 	SDL_RenderPresent(_renderer);
 	SDL_framerateDelay(&_fps_manager);
 }
@@ -169,8 +183,8 @@ Events& Window::get_events() {
 	return _events;
 }
 
-void Window::settings_menu(const Pokemons& pokemons, Texture& title_texture) {
-	Menu menu(std::nullopt, get_font(FontSize::NORMAL));
+void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+	Menu menu(std::nullopt, get_font(FontSize::NORMAL), 600);
 	menu.add_choice(SettingsMenu::NICKNAME, "Change nickname");
 	menu.add_choice(SettingsMenu::POKEMON, "Change pokemon");
 	menu.add_choice(SettingsMenu::BACK_TO_MAIN_MENU, "Back to main menu");
@@ -182,18 +196,23 @@ void Window::settings_menu(const Pokemons& pokemons, Texture& title_texture) {
 		if (is_quit())
 			exit(0);
 
+		if (is_escape_down()) {
+			press_up_key(SDL_SCANCODE_ESCAPE);
+			return;
+		}
+
 		if (is_enter_down()) {
 			press_up_key(SDL_SCANCODE_RETURN);
 			press_up_key(SDL_SCANCODE_KP_ENTER);
 
-			switch (menu.get_selected_choice())
+			switch (menu.get_selected_choice_num())
 			{
 			case SettingsMenu::NICKNAME:
-				if (ask_nickname_if_necessary(true))
+				if (ask_nickname_if_necessary(true, title_texture, menu_texture))
 					_settings.save_settings();
 				break;
 			case SettingsMenu::POKEMON:
-				if (ask_pokemon_if_necessary(true, pokemons))
+				if (ask_pokemon_if_necessary(true, pokemons, title_texture, menu_texture))
 					_settings.save_settings();
 				break;
 			case SettingsMenu::BACK_TO_MAIN_MENU:
@@ -206,22 +225,23 @@ void Window::settings_menu(const Pokemons& pokemons, Texture& title_texture) {
 		menu.update_selected_choice_from_events(get_events());
 
 		render_clear();
-		title_texture.set_pos_dst(get_width() / 2 - title_texture.get_width() / 2, 80);
-		title_texture.render(*this);
+		menu_texture->render_without_pos_dst(*this);
+		title_texture->set_pos_dst(get_width() / 2 - title_texture->get_width() / 2, 80);
+		title_texture->render(*this);
 		std::shared_ptr<Anim> chosed_anim_ptr = pokemons.get_pokemon_anim_ptr(_settings.get_pokemon_num());
 		chosed_anim_ptr->set_pos_dst(get_width() / 2 - chosed_anim_ptr->get_width() / 2, get_height() / 2 - chosed_anim_ptr->get_height() / 2 - 50);
-		chosed_anim_ptr->render_anim(*this);
+		chosed_anim_ptr->render_anim(*this, true);
 		menu.render_menu(*this);
 		render_present();
 	}
 }
 
 
-bool Window::ask_nickname_if_necessary(const bool forceAsk) {
+bool Window::ask_nickname_if_necessary(const bool forceAsk, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
 	if (forceAsk || _settings.get_nickname().empty()) {
 		do {
-			Input input_nickname("Enter your nickname:", get_font(FontSize::NORMAL), _settings.get_nickname());
-			input_nickname.show_input_menu(*this);
+			Input input_nickname("Enter your nickname:", get_font(FontSize::NORMAL), _settings.get_nickname(), true);
+			input_nickname.show_input_menu(*this, title_texture, menu_texture);
 			_settings.set_nickname(input_nickname.get_current_input());
 		} while (_settings.get_nickname().empty());
 
@@ -231,16 +251,16 @@ bool Window::ask_nickname_if_necessary(const bool forceAsk) {
 	return false;
 }
 
-bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list) {
+bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
 	if (_settings.get_pokemon_num() == -1 || forceAsk) {
-		Menu choose_pkmn_menu("Choose your Pokemon:", get_font(FontSize::NORMAL));
+		Menu choose_pkmn_menu("Choose your Pokemon:", get_font(FontSize::NORMAL), 600);
 		for (int choice_num = 0; choice_num < pokemon_list.get_num_pokemons(); choice_num++) {
 			choose_pkmn_menu.add_choice(choice_num, pokemon_list.get_pokemon_name(choice_num));
 			std::shared_ptr<Anim> anim_ptr = pokemon_list.get_pokemon_anim_ptr(choice_num);
-			anim_ptr->set_pos_dst(get_width() / 2 + ((choice_num - 1) * 200) - anim_ptr->get_width() / 2, get_height() / 2 - anim_ptr->get_height() / 2 - 150);
+			
 		}
 
-		SDL_Color text_color = { 0, 0, 0, 255 };
+		SDL_Color unselected_text_color = { 0, 0, 0, 255 };
 
 		while (true) {
 			update_events();
@@ -248,22 +268,43 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 			if (is_quit())
 				exit(0);
 
+			if (is_escape_down()) {
+				press_up_key(SDL_SCANCODE_ESCAPE);
+
+				if (forceAsk)
+					return false;
+			}
+
 			choose_pkmn_menu.update_selected_choice_from_events(get_events());
 
 			if (is_enter_down()) {
 				press_up_key(SDL_SCANCODE_RETURN);
 				press_up_key(SDL_SCANCODE_KP_ENTER);
 
-				_settings.set_pokemon_num(choose_pkmn_menu.get_selected_choice());
+				_settings.set_pokemon_num(choose_pkmn_menu.get_selected_choice_num());
 				break;
 			}
 
 			render_clear();
+			menu_texture->render_without_pos_dst(*this);
+			title_texture->set_pos_dst(get_width() / 2 - title_texture->get_width() / 2, 80);
+			title_texture->render(*this);
+
+			Uint64 alpha = SDL_GetTicks64() % 512;
+			if (alpha > 255)
+				alpha = -alpha + 511;
+			if (alpha == 0)
+				alpha = 1;
+
+			SDL_Color selected_text_color = { 0, 0, 0, alpha };
+
 			for (int choice_num = 0; choice_num < pokemon_list.get_num_pokemons(); choice_num++) {
-				pokemon_list.get_pokemon_anim_ptr(choice_num)->render_anim(*this);
+				pokemon_list.get_pokemon_anim_ptr(choice_num)->set_pos_dst(get_width() / 2 + ((choice_num - 1) * 200) - pokemon_list.get_pokemon_anim_ptr(choice_num)->get_width() / 2, get_height() / 2 - pokemon_list.get_pokemon_anim_ptr(choice_num)->get_height() / 2 - 150);
+				pokemon_list.get_pokemon_anim_ptr(choice_num)->render_anim(*this, true);
 
 				SDL_Rect pos_dst;
-				SDL_Texture* texture = get_text_texture(*this, get_font(FontSize::NORMAL), pokemon_list.get_pokemon_name(choice_num), text_color);
+				
+				SDL_Texture* texture = get_text_texture(*this, get_font(FontSize::NORMAL), pokemon_list.get_pokemon_name(choice_num), choice_num == choose_pkmn_menu.get_selected_choice_num() ? selected_text_color : unselected_text_color);
 				SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
 				pos_dst.x = get_width() / 2 + ((choice_num - 1) * 200) - pos_dst.w / 2;
 				pos_dst.y = get_height() / 2 - 75;
@@ -283,4 +324,66 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 
 Settings& Window::get_settings() {
 	return _settings;
+}
+
+
+void Window::add_toaster(const std::string& toaster_message) {
+	_toasters.emplace_back(toaster_message, 5000);
+}
+
+std::string Window::get_toaster_message(const int toaster_index) const {
+	return _toasters[toaster_index].get_message();
+}
+
+int Window::get_toaster_time_left(const int toaster_index) const {
+	return _toasters[toaster_index].get_time_left();
+}
+
+void Window::decrease_toaster_time_left(const int toaster_index) {
+	_toasters[toaster_index].decrease_time_left(); // TODO: be more precise
+}
+
+void Window::show_toasters() {
+	SDL_Rect pos_dst = { .x = 0, .y = 80, .w = 0, .h = 0 };
+
+	for (auto toaster_iter = _toasters.begin(); toaster_iter != _toasters.end();) {
+		if (toaster_iter->get_time_left() >= 0) {
+			int alpha = 255;
+			if (toaster_iter->get_time_left() > 5000 - 255) {
+				alpha = (5000 - toaster_iter->get_time_left());
+			} else if (toaster_iter->get_time_left() < 255) {
+				alpha = toaster_iter->get_time_left();
+			}
+
+			SDL_Color text_color = { 0, 0, 0, alpha };
+
+			SDL_Texture* texture = get_text_texture(*this, get_font(FontSize::SMALL), toaster_iter->get_message(), text_color, true);
+			SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
+			pos_dst.x = get_width() - 80 - pos_dst.w - 10;
+			pos_dst.w += 20;
+			pos_dst.h += 20;
+
+			SDL_SetRenderDrawColor(get_renderer(), 255, 255, 255, alpha);
+			SDL_RenderFillRect(get_renderer(), &pos_dst);
+
+			SDL_SetRenderDrawColor(get_renderer(), 0, 0, 0, alpha);
+			SDL_RenderDrawRect(get_renderer(), &pos_dst);
+
+			pos_dst.x += 10;
+			pos_dst.w -= 20;
+			pos_dst.y += 10;
+			pos_dst.h -= 20;
+
+			SDL_RenderCopy(get_renderer(), texture, nullptr, &pos_dst);
+			SDL_DestroyTexture(texture);
+
+			pos_dst.y += 90;
+			toaster_iter->decrease_time_left();
+			toaster_iter++;
+		}
+		else {
+			toaster_iter = _toasters.erase(toaster_iter);
+		}
+
+	}
 }

@@ -25,6 +25,10 @@ std::string Colors::green() {
     return "\x1B[32m";
 }
 
+std::string Colors::cyan() {
+    return "\x1B[96m";
+}
+
 std::string Colors::reset() {
     return "\033[0m";
 }

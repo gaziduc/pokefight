@@ -3,7 +3,7 @@
 #
 
 # Add source to this project's executable.
-set (SRC "main.cpp" "../pokefight-common/ip.cpp" "../pokefight-common/ip.h" "../pokefight-common/player.h" "../pokefight-common/player.cpp" "attack.cpp" "attack.h" "colors.h" "colors.cpp" "../pokefight-common/const.h") 
+set (SRC "main.cpp" "../pokefight-common/ip.cpp" "../pokefight-common/ip.h" "../pokefight-common/player.h" "../pokefight-common/player.cpp" "../pokefight-common/attack.cpp" "../pokefight-common/attack.h" "colors.h" "colors.cpp" "../pokefight-common/const.h" "../pokefight-common/utils.cpp" "../pokefight-common/utils.h") 
 add_executable ("pokefight-server" ${SRC} "res.rc")
 
 include_directories (SRC ${SDL2_INCLUDE_DIR} ${SDL2_NET_INCLUDE_DIR})

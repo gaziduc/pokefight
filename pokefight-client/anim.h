@@ -17,11 +17,11 @@ private:
 	int _pos_dst_y;
 
 public:
-	Anim(const Window& window, const std::string& filename, const int x, const int y);
+	Anim(const Window& window, const std::string& filename);
 	~Anim();
 
 	void set_pos_dst(const int x, const int y);
-	void render_anim(const Window& window);
+	void render_anim(const Window& window, const bool draw_ellipse);
 
 	int get_width();
 	int get_height();

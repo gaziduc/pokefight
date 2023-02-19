@@ -1,4 +1,5 @@
 
+#include "../pokefight-common/const.h"
 #include "menu.h"
 #include "settings.h"
 #include "input.h"
@@ -7,11 +8,10 @@
 #include "texture.h"
 #include <string>
 #include <fstream>
+#include <algorithm>
 
 Settings::Settings() {
 }
-
-
 
 
 
@@ -20,6 +20,7 @@ void Settings::load_settings() {
 
 	if (settings_file_read.is_open()) {
 		std::getline(settings_file_read, _nickname);
+		std::replace(_nickname.begin(), _nickname.end(), MESSAGE_WORD_DELIMITER, '_');
 
 		std::string pokemon;
 		std::getline(settings_file_read, pokemon);

@@ -19,17 +19,20 @@ class Menu {
 private:
 	std::optional<std::string> _title;
 	std::map<int, std::string> _choices;
-	int _selected_choice;
+	int _selected_choice_num;
 	TTF_Font* _font;
+	int _width;
 	
 
 public:
-	Menu(const std::optional<std::string>& title, TTF_Font* font);
+	Menu(const std::optional<std::string>& title, TTF_Font* font, const int width);
 
 	void add_choice(const int choice_num, const std::string& str);
 	void update_selected_choice_from_events(Events& events);
 	void render_menu(const Window& window);
-	int get_selected_choice() const;
+	int get_selected_choice_num() const;
+	std::string get_selected_choice_str() const;
+	void clear_choices();
 
 	static void render_rect_and_pokeballs(const Window& window, SDL_Rect* pos_dst);
 

@@ -41,6 +41,10 @@ void Texture::render(const Window& window) {
 	SDL_RenderCopy(window.get_renderer(), _texture, nullptr, &pos_dst);
 }
 
+void Texture::render_without_pos_dst(const Window& window) {
+	SDL_RenderCopy(window.get_renderer(), _texture, nullptr, nullptr);
+}
+
 int Texture::get_width() {
 	return _width;
 }

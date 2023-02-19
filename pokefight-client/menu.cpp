@@ -10,10 +10,11 @@
 #include <memory>
 #include <optional>
 
-Menu::Menu(const std::optional<std::string>& title, TTF_Font *font) {
+Menu::Menu(const std::optional<std::string>& title, TTF_Font *font, const int width) {
 	_title = title;
 	_font = font;
-	_selected_choice = 0;
+	_selected_choice_num = 0;
+	_width = width;
 }
 
 void Menu::add_choice(const int choice_num, const std::string& str) {
@@ -22,15 +23,15 @@ void Menu::add_choice(const int choice_num, const std::string& str) {
 
 void Menu::update_selected_choice_from_events(Events& events) {
 	if (events.is_key_down(SDL_SCANCODE_UP)) {
-		if (_selected_choice > 0)
-			_selected_choice--;
+		if (_selected_choice_num > 0)
+			_selected_choice_num--;
 
 		events.press_up_key(SDL_SCANCODE_UP);
 	}
 
 	if (events.is_key_down(SDL_SCANCODE_DOWN)) {
-		if (_selected_choice < _choices.size() - 1)
-			_selected_choice++;
+		if (_selected_choice_num < _choices.size() - 1)
+			_selected_choice_num++;
 
 		events.press_up_key(SDL_SCANCODE_DOWN);
 	}
@@ -44,10 +45,10 @@ void Menu::render_menu(const Window& window) {
 
 
 	SDL_Rect pos_dst = {
-		.x = window.get_width() / 2 - 260,
-		.y = _title.has_value() ? y - 70 : y,
-		.w = 520,
-		.h = _title.has_value() ? h + 70 : h
+		.x = window.get_width() / 2 - _width / 2,
+		.y = _title.has_value() ? y - 60 : y,
+		.w = _width,
+		.h = _title.has_value() ? h + 60 : h
 	};
 
 	Menu::render_rect_and_pokeballs(window, &pos_dst);
@@ -63,7 +64,7 @@ void Menu::render_menu(const Window& window) {
 		SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 		SDL_DestroyTexture(texture);
 
-		pos_dst.y += 70;
+		pos_dst.y += 60;
 		pos_dst.x += 35;
 	}
 	else {
@@ -79,7 +80,7 @@ void Menu::render_menu(const Window& window) {
 		SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 		SDL_DestroyTexture(texture);
 
-		if (_selected_choice == choice_num) {
+		if (_selected_choice_num == choice_num) {
 			Texture* selected = window.get_texture(Picture::MENU_SELECTED);
 			selected->set_pos_dst(pos_dst.x - 35, pos_dst.y + 15);
 			selected->render(window);
@@ -90,8 +91,17 @@ void Menu::render_menu(const Window& window) {
 }
 
 
-int Menu::get_selected_choice() const {
-	return _selected_choice;
+int Menu::get_selected_choice_num() const {
+	return _selected_choice_num;
+}
+
+std::string Menu::get_selected_choice_str() const {
+	return _choices.at(_selected_choice_num);
+}
+
+void Menu::clear_choices() {
+	_choices.clear();
+	_selected_choice_num = 0;
 }
 
 
