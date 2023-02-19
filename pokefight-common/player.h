@@ -37,4 +37,5 @@ public:
 	void set_current_turn_action(const std::optional<std::vector<std::string>>& current_turn_action);
 	bool get_is_ready() const;
 	void set_is_ready(const bool is_ready);
+	void reset_player();
 };

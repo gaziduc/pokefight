@@ -95,3 +95,11 @@ bool Player::get_is_ready() const {
 void Player::set_is_ready(const bool is_ready) {
 	_is_ready = is_ready;
 }
+
+void Player::reset_player() {
+	_is_ready = false;
+	_health = _initial_health;
+	_dead = false;
+	_current_turn_action = std::nullopt;
+	_show_pokemon = true;
+}

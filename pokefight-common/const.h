@@ -27,7 +27,7 @@ inline static const std::map<std::string, Attack> ATTACK_STATS = {
 		{ "Tackle", { 35, Type::NORMAL_TYPE }},
 		{ "Fire Blast", { 120, Type::FIRE }},
 		{ "Hydro Pump", { 120, Type::WATER }},
-		{ "SolarBeam", { 120, Type::GRASS }}
+		{ "Solar Beam", { 120, Type::GRASS }}
 };
 
 inline static const float TYPE_ATTACK_MULTIPLICATOR_CHART[NUM_TYPES][NUM_TYPES] = {

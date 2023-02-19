@@ -183,8 +183,12 @@ std::string connect(Window& window, const Pokemons& pokemons, std::shared_ptr<Te
 	SDLNet_TCP_AddSocket(socket_set, socket);
 	
 	std::vector<Player> players;
-	if (wait_for_players_readiness(window, socket, socket_set, players, pokemons, input_ip.get_current_input() + ":" + std::to_string(port), title_texture, menu_texture)) {
+	while (wait_for_players_readiness(window, socket, socket_set, players, pokemons, input_ip.get_current_input() + ":" + std::to_string(port), title_texture, menu_texture)) {
 		battle(window, socket, socket_set, players, pokemons);
+
+		for (auto& player : players) {
+			player.reset_player();
+		}
 	}
 
 
@@ -231,6 +235,9 @@ bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketS
 					for (int i = 1; i < message.size(); i += 5) {
 						player_infos.emplace_back(std::stoi(message[i + 4]), std::stoi(message[i + 3]), message[i], std::stoi(message[i + 1]), (bool)std::stoi(message[i + 2]));
 					}
+				}
+				else if (message[0] == "TO_CLIENT_START_GAME") {
+					return true;
 				}
 			}
 		}
@@ -331,10 +338,6 @@ bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketS
 				break;
 			}
 		}
-
-		if (player_infos.size() >= 2 && are_all_players_ready) {
-			return true;
-		}
 	}
 }
 
@@ -361,10 +364,6 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 			menu.add_choice(num_menu_choice, other_players[i]->get_nickname());
 			num_menu_choice++;
 		}
-	}
-
-	if (num_menu_choice == 0) {
-		return;
 	}
 
 	while (true) {
@@ -420,6 +419,9 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 						}
 
 						nickname_to_attack.clear();
+					} else if (message[0] == "TO_CLIENT_END_GAME") {
+						Message::show_message_battle(window, message[1] + " won! Congratulations!", true, pokemons, my_player_ptr, other_players);
+						return;
 					}
 				}
 
@@ -487,6 +489,9 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 
 						nickname_to_attack.clear();
 						attack = "exit from this loop...";
+					} else if (message[0] == "TO_CLIENT_END_GAME") {
+						Message::show_message_battle(window, message[1] + " won! Congratulations!", true, pokemons, my_player_ptr, other_players);
+						return;
 					}
 				}
 
@@ -500,10 +505,11 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 		}
 
 
-		std::string message = "TO_SERVER_ATTACK";
-		message += MESSAGE_WORD_DELIMITER + attack + MESSAGE_WORD_DELIMITER + nickname_to_attack + MESSAGE_DELIMITER;
-		SDLNet_TCP_Send(socket, message.c_str(), message.size());
-
+		if (!my_player_ptr->get_is_dead()) {
+			std::string message = "TO_SERVER_ATTACK";
+			message += MESSAGE_WORD_DELIMITER + attack + MESSAGE_WORD_DELIMITER + nickname_to_attack + MESSAGE_DELIMITER;
+			SDLNet_TCP_Send(socket, message.c_str(), message.size());
+		}
 		
 		int alpha = 255;
 		bool alpha_increase = false;
@@ -558,9 +564,9 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 		for (auto& message : splitted_message) {
 			if (message[0] == "TO_CLIENT_ATTACK") {
 				Message::show_message_battle(window, message[3] + " used " + message[1] + " on " + message[2] + "!", true, pokemons, my_player_ptr, other_players);
-			
+
 				std::shared_ptr<Player> hurted_player = nullptr;
-				for (auto& player: other_players) {
+				for (auto& player : other_players) {
 					if (player->get_nickname() == message[2]) {
 						hurted_player = player;
 						break;
@@ -569,61 +575,67 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 
 				if (hurted_player == nullptr)
 					hurted_player = my_player_ptr;
-			
-				window.play_sound(Sound::HIT);
 
-				Uint64 first_ticks = SDL_GetTicks64();
-				Uint64 current_ticks = first_ticks;
+				if (hurted_player->get_is_dead())
+					Message::show_message_battle(window, "But " + message[2] + " is already KO...", true, pokemons, my_player_ptr, other_players);
+				else {
+					window.play_sound(Sound::HIT);
 
-				while (current_ticks - first_ticks < 1000) {
-					window.update_events();
+					Uint64 first_ticks = SDL_GetTicks64();
+					Uint64 current_ticks = first_ticks;
 
-					if (window.is_quit())
-						exit(1);
+					while (current_ticks - first_ticks < 1000) {
+						window.update_events();
 
-					window.render_clear();
+						if (window.is_quit())
+							exit(1);
 
-					const bool show_pokemon = current_ticks % 500 < 250;
-					hurted_player->set_show_pokemon(show_pokemon);
+						window.render_clear();
 
-					render_battlefield(window, pokemons, my_player_ptr, other_players);
+						const bool show_pokemon = current_ticks % 500 < 250;
+						hurted_player->set_show_pokemon(show_pokemon);
 
-					window.render_present();
+						render_battlefield(window, pokemons, my_player_ptr, other_players);
 
-					current_ticks = SDL_GetTicks64();
-				}
+						window.render_present();
 
-				hurted_player->set_show_pokemon(true);
-
-				int damage_to_decrease_left = std::stoi(message[4]);
-
-				while (damage_to_decrease_left > 0) {
-					window.update_events();
-
-					if (window.is_quit())
-						exit(1);
-					
-					window.render_clear();
-
-					hurted_player->decrease_health(1);
-					int health_left = hurted_player->get_health();
-					if (health_left > 0)
-						damage_to_decrease_left--;
-					else {
-						const std::string ko_nickname = hurted_player->get_nickname();
-						Message::show_message_battle(window, ko_nickname + " is KO", true, pokemons, my_player_ptr, other_players);
-						damage_to_decrease_left = 0;
+						current_ticks = SDL_GetTicks64();
 					}
 
-					render_battlefield(window, pokemons, my_player_ptr, other_players);
+					hurted_player->set_show_pokemon(true);
 
-					window.render_present();
-				}
+					int damage_to_decrease_left = std::stoi(message[4]);
 
-				const bool is_critical = (bool) std::stoi(message[5]);
-				if (is_critical) {
-					Message::show_message_battle(window, "Critical hit!", true, pokemons, my_player_ptr, other_players);
+					while (damage_to_decrease_left > 0) {
+						window.update_events();
+
+						if (window.is_quit())
+							exit(1);
+
+						window.render_clear();
+
+						hurted_player->decrease_health(1);
+						int health_left = hurted_player->get_health();
+						if (health_left > 0)
+							damage_to_decrease_left--;
+						else {
+							const std::string ko_nickname = hurted_player->get_nickname();
+							Message::show_message_battle(window, ko_nickname + " is KO", true, pokemons, my_player_ptr, other_players);
+							damage_to_decrease_left = 0;
+						}
+
+						render_battlefield(window, pokemons, my_player_ptr, other_players);
+
+						window.render_present();
+					}
+
+					const bool is_critical = (bool)std::stoi(message[5]);
+					if (is_critical)
+						Message::show_message_battle(window, "Critical hit!", true, pokemons, my_player_ptr, other_players);
 				}
+			} else if (message[0] == "TO_CLIENT_END_GAME") {
+				Message::show_message_battle(window, message[1] + " won! Congratulations!", true, pokemons, my_player_ptr, other_players);
+				return;
 			}
 		}
 
@@ -644,6 +656,9 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 					else
 						my_player_ptr = player_ptr;
 				}
+			} else if (message[0] == "TO_CLIENT_END_GAME") {
+				Message::show_message_battle(window, message[1] + " won! Congratulations!", true, pokemons, my_player_ptr, other_players);
+				return;
 			}
 		}
 
@@ -655,10 +670,6 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 				menu.add_choice(num_menu_choice, other_players[i]->get_nickname());
 				num_menu_choice++;
 			}
-		}
-
-		if (num_menu_choice == 0) {
-			return;
 		}
 	}
 }

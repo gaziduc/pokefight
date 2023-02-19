@@ -64,28 +64,64 @@ int main(int argc, char* argv[]) {
 	std::vector<std::pair<TCPsocket, Player>> client_list;
 	SDLNet_SocketSet socket_set = SDLNet_AllocSocketSet(MAX_CLIENTS_SOCKETS_NUM);
 
+	bool is_in_lobby = true;
+
 	// Use current time as seed for random generator
 	std::srand(std::time(nullptr));
 
 	std::cout << "Server is now listening...\n";
 	
 	while (true) {
-		TCPsocket potential_new_client_socket = SDLNet_TCP_Accept(server_socket);
+		if (is_in_lobby) {
+			TCPsocket potential_new_client_socket = SDLNet_TCP_Accept(server_socket);
 
-		// Accept new connections
-		if (potential_new_client_socket != nullptr) {
-			IPaddress* new_client_ip_address = SDLNet_TCP_GetPeerAddress(potential_new_client_socket);
-			IPv4 curr_ipv4(new_client_ip_address);
+			// Accept new connections
+			if (potential_new_client_socket != nullptr) {
+				IPaddress* new_client_ip_address = SDLNet_TCP_GetPeerAddress(potential_new_client_socket);
+				IPv4 curr_ipv4(new_client_ip_address);
 
-			std::cout << "User at " << Colors::yellow() << curr_ipv4.to_string() << Colors::reset() << ':' << Colors::green() << new_client_ip_address->port << Colors::reset() << " (" << SDLNet_ResolveIP(new_client_ip_address) << ") joined the server!\n";
-			
-			std::string ip_and_port = curr_ipv4.to_string() + ':' + std::to_string(new_client_ip_address->port);
-			Player new_player(100, ip_and_port);
-			client_list.push_back(std::make_pair<>(potential_new_client_socket, new_player));
-			SDLNet_TCP_AddSocket(socket_set, potential_new_client_socket);
+				std::cout << "User at " << Colors::yellow() << curr_ipv4.to_string() << Colors::reset() << ':' << Colors::green() << new_client_ip_address->port << Colors::reset() << " (" << SDLNet_ResolveIP(new_client_ip_address) << ") joined the server!\n";
+
+				std::string ip_and_port = curr_ipv4.to_string() + ':' + std::to_string(new_client_ip_address->port);
+				Player new_player(100, ip_and_port);
+				client_list.push_back(std::make_pair<>(potential_new_client_socket, new_player));
+				SDLNet_TCP_AddSocket(socket_set, potential_new_client_socket);
+			}
 		}
-
+		
 		if (!client_list.empty()) {
+			int alive_count = client_list.size();
+
+			for (auto& client : client_list) {
+				if (client.second.get_is_dead())
+					alive_count--;
+			}
+
+			if (alive_count <= 1 && !is_in_lobby) {
+				std::string winner_nickname;
+
+				if (alive_count == 1) {
+					for (auto& client : client_list) {
+						if (!client.second.get_is_dead()) {
+							winner_nickname = client.second.get_nickname();
+						}
+					}
+				}
+
+				std::string message = "TO_CLIENT_END_GAME";
+				message += MESSAGE_WORD_DELIMITER + winner_nickname + MESSAGE_DELIMITER;
+
+				for (auto& client : client_list) {
+					SDLNet_TCP_Send(client.first, message.c_str(), message.size());
+					client.second.reset_player();
+				}
+
+				send_infos_to_clients(client_list, std::nullopt);
+
+				is_in_lobby = true;
+			}
+
+
 			int sockets_ready_for_reading = SDLNet_CheckSockets(socket_set, 0);
 			if (sockets_ready_for_reading == -1)
 				std::cout << "Error: " << SDLNet_GetError() << '\n';
@@ -116,10 +152,8 @@ int main(int argc, char* argv[]) {
 						std::string received_message(data);
 
 						std::vector<std::string> splitted_messages;
-
 						size_t start;
 						size_t end = 0;
-
 						while ((start = received_message.find_first_not_of(MESSAGE_DELIMITER, end)) != std::string::npos)
 						{
 							end = received_message.find(MESSAGE_DELIMITER, start);
@@ -129,7 +163,6 @@ int main(int argc, char* argv[]) {
 						std::vector<std::vector<std::string>> splitted_messages_words;
 						for (auto& message : splitted_messages) {
 							std::vector<std::string> splitted_words;
-
 							size_t start;
 							size_t end = 0;
 
@@ -161,15 +194,32 @@ int main(int argc, char* argv[]) {
 								send_infos_to_clients(client_list, std::nullopt);
 							}
 							else if (message[0] == "TO_SERVER_READINESS") {
+								bool start_game = true;
+
+								if (client_list.size() < 2)
+									start_game = false;
+
 								for (auto& client : client_list) {
 									Player& player = client.second;
 									if (player.get_nickname() == message[1]) {
 										player.set_is_ready((bool)std::stoi(message[2]));
-										break;
 									}
+
+									if (!player.get_is_ready())
+										start_game = false;
 								}
 
 								send_infos_to_clients(client_list, std::nullopt);
+
+								if (start_game) {
+									is_in_lobby = false;
+									std::string message = "TO_CLIENT_START_GAME";
+									message += MESSAGE_DELIMITER;
+									for (auto& client : client_list) {
+										SDLNet_TCP_Send(client.first, message.c_str(), message.size());
+										client.second.set_is_ready(false);
+									}
+								}
 							}
 							else if (message[0] == "TO_SERVER_ATTACK") {
 								player.set_current_turn_action(message);
@@ -184,13 +234,13 @@ int main(int argc, char* argv[]) {
 
 				for (auto& client : client_list) {
 					Player& player = client.second;
+					
 					if (!player.get_current_turn_action().has_value() && !player.get_is_dead()) {
 						play_next_turn = false;
-						break;
 					}
 				}
-				
-				if (play_next_turn) {
+
+				if (play_next_turn && !is_in_lobby) {
 					std::string message_to_send;
 
 					for (auto& client : client_list) {
@@ -212,7 +262,6 @@ int main(int argc, char* argv[]) {
 						player.set_current_turn_action(std::nullopt);
 					}
 
-					std::cout << message_to_send;
 					for (auto& client : client_list) {
 						SDLNet_TCP_Send(client.first, message_to_send.c_str(), message_to_send.size());
 					}
