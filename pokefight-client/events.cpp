@@ -27,6 +27,10 @@ std::string Events::get_text() const {
     return _text;
 }
 
+bool Events::is_focus_lost() const {
+    return _focus_lost;
+}
+
 void Events::update_events() {
     _quit = false;
     _text = "";
@@ -52,6 +56,13 @@ void Events::update_events() {
 
         case SDL_TEXTINPUT:
             _text = std::string(event.text.text);
+            break;
+
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                _focus_lost = true;
+            else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                _focus_lost = false;
             break;
 
         default:

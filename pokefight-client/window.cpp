@@ -49,6 +49,11 @@ void Window::init() {
 
 	_sfx.emplace(Sound::HIT, Mix_LoadWAV("data/hit.wav"));
 
+	// Settings
+	_settings.load_settings();
+
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+
 	_window = SDL_CreateWindow(_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 	if (_window == nullptr)
 		throw std::runtime_error("Error while creating window:\n" + std::string(SDL_GetError()));
@@ -56,6 +61,13 @@ void Window::init() {
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
 	if (_renderer == nullptr)
 		throw std::runtime_error("Error while creating renderer:\n" + std::string(SDL_GetError()));
+
+	if (_settings.get_is_fullscreen()) {
+		SDL_DisplayMode displayMode;
+		SDL_GetCurrentDisplayMode(0, &displayMode);
+		SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
+		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
+	}
 
 	// Enable blending (alpha)
 	SDL_SetRenderDrawBlendMode(get_renderer(), SDL_BLENDMODE_BLEND);
@@ -69,19 +81,12 @@ void Window::init() {
 	_fonts.emplace(FontSize::SMALL, TTF_OpenFont("data/segoeui.ttf", 24));
 	_fonts.emplace(FontSize::NORMAL, TTF_OpenFont("data/segoeui.ttf", 34));
 
-	// Settings
-	_settings.load_settings();
-
 	// Framerate
 	SDL_initFramerate(&_fps_manager);
 	SDL_setFramerate(&_fps_manager, 60);
 
-	Mix_Music* music = Mix_LoadMUS("data/route-203.ogg");
-	if (music == nullptr) {
-		throw std::runtime_error("Error while loading music:\n" + std::string(Mix_GetError()));
-	}
-
-	Mix_PlayMusic(music, -1);
+	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+	load_and_play_music("data/route-203.ogg");
 }
 
 Window::~Window() {
@@ -187,7 +192,8 @@ void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> ti
 	Menu menu(std::nullopt, get_font(FontSize::NORMAL), 600);
 	menu.add_choice(SettingsMenu::NICKNAME, "Change nickname");
 	menu.add_choice(SettingsMenu::POKEMON, "Change pokemon");
-	menu.add_choice(SettingsMenu::BACK_TO_MAIN_MENU, "Back to main menu");
+	menu.add_choice(SettingsMenu::TOOGLE_FULLSCREEN, "Toggle Fullscreen");
+	menu.add_choice(SettingsMenu::BACK_TO_MAIN_MENU, "Back to main menu...");
 
 
 	while (true) {
@@ -214,6 +220,22 @@ void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> ti
 			case SettingsMenu::POKEMON:
 				if (ask_pokemon_if_necessary(true, pokemons, title_texture, menu_texture))
 					_settings.save_settings();
+				break;
+			case SettingsMenu::TOOGLE_FULLSCREEN:
+				if (_settings.get_is_fullscreen()) {
+					SDL_SetWindowFullscreen(_window, 0);
+					_settings.set_is_fullscreen(false);
+				}
+				else {
+					SDL_DisplayMode displayMode;
+					SDL_GetCurrentDisplayMode(0, &displayMode);
+					SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
+					SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
+					_settings.set_is_fullscreen(true);
+				}
+			
+				_settings.save_settings();
+
 				break;
 			case SettingsMenu::BACK_TO_MAIN_MENU:
 				return;
@@ -384,6 +406,19 @@ void Window::show_toasters() {
 		else {
 			toaster_iter = _toasters.erase(toaster_iter);
 		}
-
 	}
+}
+
+void Window::load_and_play_music(const std::string& music_to_load_path) {
+	if (_music != nullptr) {
+		Mix_FreeMusic(_music);
+		_music = nullptr;
+	}
+
+	_music = Mix_LoadMUS(music_to_load_path.c_str());
+	if (_music == nullptr) {
+		throw std::runtime_error("Error while loading music:\n" + std::string(Mix_GetError()));
+	}
+
+	Mix_PlayMusic(_music, -1);
 }

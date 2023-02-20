@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 						if (!error.empty()) {
 							Menu error_menu(error, window.get_font(FontSize::NORMAL), 1000);
 							error_menu.add_choice(0, "Retry");
-							error_menu.add_choice(1, "Back to main menu");
+							error_menu.add_choice(1, "Back to main menu...");
 
 							while (true) {
 								window.update_events();
@@ -189,6 +189,8 @@ std::string connect(Window& window, const Pokemons& pokemons, std::shared_ptr<Te
 		for (auto& player : players) {
 			player.reset_player();
 		}
+
+		window.load_and_play_music("data/route-203.ogg");
 	}
 
 
@@ -343,6 +345,7 @@ bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketS
 
 
 void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::vector<Player>& player_infos, const Pokemons& pokemons) {
+	window.load_and_play_music("data/red.ogg");
 
 	const std::string my_nickname = window.get_settings().get_nickname();
 	std::vector<std::shared_ptr<Player>> other_players;
@@ -679,7 +682,7 @@ void render_battlefield(Window& window, const Pokemons& pokemons, const std::sha
 	if (!my_player_ptr->get_is_dead()) {
 		if (my_player_ptr->get_show_pokemon()) {
 			std::shared_ptr<Anim> my_anim = pokemons.get_pokemon_back_anim_ptr(my_player_ptr->get_chosen_pokemon());
-			my_anim->set_pos_dst(80, window.get_height() - 380);
+			my_anim->set_pos_dst(120, window.get_height() - 380);
 			my_anim->render_anim(window, true);
 		}
 

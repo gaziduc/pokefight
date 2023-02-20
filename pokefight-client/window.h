@@ -41,6 +41,7 @@ private:
 	std::map<Sound, Mix_Chunk*> _sfx;
 	Settings _settings;
 	std::vector<Toaster> _toasters;
+	Mix_Music* _music = nullptr;
 
 public:
 	Window(const int initial_width, const int initial_height);
@@ -80,4 +81,6 @@ public:
 	int get_toaster_time_left(const int toaster_index) const;
 	void decrease_toaster_time_left(const int toaster_index);
 	void show_toasters();
+
+	void load_and_play_music(const std::string& music_to_load_path);
 };

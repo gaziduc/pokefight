@@ -8,6 +8,7 @@ private:
     bool _quit = false;
     bool _keys[SDL_NUM_SCANCODES] = { false };
     std::string _text;
+    bool _focus_lost = false;
 
 public:
     bool is_quit() const;
@@ -16,6 +17,7 @@ public:
     bool is_enter_down() const;
     bool is_escape_down() const;
     std::string get_text() const;
+    bool is_focus_lost() const;
 
     void update_events();
 };

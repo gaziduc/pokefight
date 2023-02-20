@@ -52,7 +52,7 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 	first_ticks = SDL_GetTicks64();
 	Uint64 ticks = first_ticks;
 
-	while (ticks - first_ticks < 1000) {
+	while (ticks - first_ticks < 1255) {
 		window.update_events();
 
 		if (window.is_quit())
@@ -62,6 +62,10 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 
 		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 		SDL_RenderDrawRect(window.get_renderer(), &pos_dst);
+
+		if (ticks - first_ticks >= 1000) {
+			text_color.a = first_ticks - ticks + 1255;
+		}
 
 		SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), message, text_color, is_utf8);
 		SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
