@@ -45,11 +45,8 @@ int main(int argc, char *argv[])
 		menu.add_choice(MainMenu::SETTINGS, "Settings");
 		menu.add_choice(MainMenu::QUIT, "Quit");
 
-		std::shared_ptr<Texture> title_texture_ptr = std::make_shared<Texture>(window, "data/title.png");
-		std::shared_ptr<Texture> menu_texture = std::make_shared<Texture>(window, "data/menu.png");
-
-		bool has_to_save = window.ask_nickname_if_necessary(false, title_texture_ptr, menu_texture);
-		has_to_save = window.ask_pokemon_if_necessary(false, pokemon_list, title_texture_ptr, menu_texture) || has_to_save;
+		bool has_to_save = window.ask_nickname_if_necessary(false);
+		has_to_save = window.ask_pokemon_if_necessary(false, pokemon_list) || has_to_save;
 		if (has_to_save)
 			window.get_settings().save_settings();
 
@@ -68,7 +65,7 @@ int main(int argc, char *argv[])
 				{
 					std::string error;
 					do {
-						error = connect(window, pokemon_list, title_texture_ptr, menu_texture);
+						error = connect(window, pokemon_list);
 						if (!error.empty()) {
 							Menu error_menu(error, window.get_font(FontSize::NORMAL), 1000);
 							error_menu.add_choice(0, "Retry");
@@ -94,9 +91,9 @@ int main(int argc, char *argv[])
 								}
 
 								window.render_clear();
-								menu_texture->render_without_pos_dst(window);
-								title_texture_ptr->set_pos_dst(window.get_width() / 2 - title_texture_ptr->get_width() / 2, 80);
-								title_texture_ptr->render(window);
+								window.get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(window);
+								window.get_texture(Picture::TITLE)->set_pos_dst(window.get_width() / 2 - window.get_texture(Picture::TITLE)->get_width() / 2, 80);
+								window.get_texture(Picture::TITLE)->render(window);
 								error_menu.render_menu(window);
 								window.render_present();
 							}
@@ -107,7 +104,7 @@ int main(int argc, char *argv[])
 				case MainMenu::FIGHT_AGAINST_COMPUTER:
 					break;
 				case MainMenu::SETTINGS:
-					window.settings_menu(pokemon_list, title_texture_ptr, menu_texture);
+					window.settings_menu(pokemon_list);
 					break;
 				case MainMenu::QUIT:
 					exit(0);
@@ -120,9 +117,9 @@ int main(int argc, char *argv[])
 			menu.update_selected_choice_from_events(window.get_events());
 
 			window.render_clear();
-			menu_texture->render_without_pos_dst(window);
-			title_texture_ptr->set_pos_dst(window.get_width() / 2 - title_texture_ptr->get_width() / 2, 80);
-			title_texture_ptr->render(window);
+			window.get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(window);
+			window.get_texture(Picture::TITLE)->set_pos_dst(window.get_width() / 2 - window.get_texture(Picture::TITLE)->get_width() / 2, 80);
+			window.get_texture(Picture::TITLE)->render(window);
 			std::shared_ptr<Anim> chosed_anim_ptr = pokemon_list.get_pokemon_anim_ptr(window.get_settings().get_pokemon_num());
 			chosed_anim_ptr->set_pos_dst(window.get_width() / 2 - chosed_anim_ptr->get_width() / 2, window.get_height() / 2 - chosed_anim_ptr->get_height() / 2 - 50);
 			chosed_anim_ptr->render_anim(window, true);
@@ -139,16 +136,16 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-std::string connect(Window& window, const Pokemons& pokemons, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+std::string connect(Window& window, const Pokemons& pokemons) {
 	Input input_ip("Enter server hostname or IP address:", window.get_font(FontSize::NORMAL), "", false);
-	if (input_ip.show_input_menu(window, title_texture, menu_texture) == InputEndAction::ESCAPE)
+	if (input_ip.show_input_menu(window) == InputEndAction::ESCAPE)
 		return "";
 
 	if (input_ip.get_current_input().empty())
 		return "Error: entered IP/hostname is empty.";
 
 	Input input_port("Enter server port:", window.get_font(FontSize::NORMAL), "", false);
-	if (input_port.show_input_menu(window, title_texture, menu_texture) == InputEndAction::ESCAPE) {
+	if (input_port.show_input_menu(window) == InputEndAction::ESCAPE) {
 		return "";
 	}
 
@@ -183,7 +180,7 @@ std::string connect(Window& window, const Pokemons& pokemons, std::shared_ptr<Te
 	SDLNet_TCP_AddSocket(socket_set, socket);
 	
 	std::vector<Player> players;
-	while (wait_for_players_readiness(window, socket, socket_set, players, pokemons, input_ip.get_current_input() + ":" + std::to_string(port), title_texture, menu_texture)) {
+	while (wait_for_players_readiness(window, socket, socket_set, players, pokemons, input_ip.get_current_input() + ":" + std::to_string(port))) {
 		battle(window, socket, socket_set, players, pokemons);
 
 		for (auto& player : players) {
@@ -198,7 +195,7 @@ std::string connect(Window& window, const Pokemons& pokemons, std::shared_ptr<Te
 	return "";
 }
 
-bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::vector<Player>& player_infos, const Pokemons& pokemons, const std::string& server_ip_port, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::vector<Player>& player_infos, const Pokemons& pokemons, const std::string& server_ip_port) {
 	SDL_Color text_color = { 0, 0, 0, 255 };
 	SDL_Color ready_text_color = { 36, 189, 81, 255 };
 	bool is_ready = false;
@@ -245,7 +242,7 @@ bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketS
 		}
 
 		window.render_clear();
-		menu_texture->render_without_pos_dst(window);
+		window.get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(window);
 
 		SDL_Rect pos_dst = { .x = 50, .y = 50, .w = 650, .h = 81 };
 		Menu::render_rect_and_pokeballs(window, &pos_dst);
@@ -325,7 +322,7 @@ bool wait_for_players_readiness(Window& window, TCPsocket socket, SDLNet_SocketS
 		SDL_RenderCopy(window.get_renderer(), escape_texture, nullptr, &pos_dst);
 		SDL_DestroyTexture(escape_texture);
 
-		SDL_Texture* readiness_texture = get_text_texture(window, window.get_font(FontSize::SMALL), "Press 'Enter' to toggle your readiness!", text_color);
+		SDL_Texture* readiness_texture = get_text_texture(window, window.get_font(FontSize::SMALL), "Press 'Enter' when you're ready!", text_color);
 		SDL_QueryTexture(readiness_texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
 		pos_dst.x = window.get_width() - pos_dst.w - 50;
 		SDL_RenderCopy(window.get_renderer(), readiness_texture, nullptr, &pos_dst);
@@ -433,8 +430,8 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 				menu.update_selected_choice_from_events(window.get_events());
 
 				window.render_clear();
-				menu.render_menu(window);
 				render_battlefield(window, pokemons, my_player_ptr, other_players);
+				menu.render_menu(window);
 				window.render_present();
 			} while (nickname_to_attack.empty());
 
@@ -501,8 +498,8 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 				attack_menu.update_selected_choice_from_events(window.get_events());
 
 				window.render_clear();
-				attack_menu.render_menu(window);
 				render_battlefield(window, pokemons, my_player_ptr, other_players);
+				attack_menu.render_menu(window);
 				window.render_present();
 			} while (attack.empty());
 		}
@@ -551,6 +548,8 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 
 			last_ticks = ticks;
 
+			render_battlefield(window, pokemons, my_player_ptr, other_players);
+
 			SDL_Rect pos_dst;
 			SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), "Waiting for other players...", text_color);
 			SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
@@ -558,8 +557,6 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 			pos_dst.y = window.get_height() - pos_dst.h - 80;
 			SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 			SDL_DestroyTexture(texture);
-
-			render_battlefield(window, pokemons, my_player_ptr, other_players);
 
 			window.render_present();
 		} while (splitted_message.empty());
@@ -679,6 +676,8 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 
 
 void render_battlefield(Window& window, const Pokemons& pokemons, const std::shared_ptr<Player>& my_player_ptr, const std::vector<std::shared_ptr<Player>>& other_players_ptr) {
+	window.get_texture(Picture::FIGHT_BACKGROUND)->render_without_pos_dst(window);
+
 	if (!my_player_ptr->get_is_dead()) {
 		if (my_player_ptr->get_show_pokemon()) {
 			std::shared_ptr<Anim> my_anim = pokemons.get_pokemon_back_anim_ptr(my_player_ptr->get_chosen_pokemon());

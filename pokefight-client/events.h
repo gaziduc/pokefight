@@ -3,6 +3,9 @@
 #include <SDL2/SDL.h>
 #include <string>
 
+// Forward declaration
+class Window;
+
 class Events {
 private:
     bool _quit = false;
@@ -19,5 +22,5 @@ public:
     std::string get_text() const;
     bool is_focus_lost() const;
 
-    void update_events();
+    void update_events(Window& window);
 };

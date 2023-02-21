@@ -18,7 +18,9 @@ std::string send_attack_to_clients(
 
 	const bool is_critical = std::rand() % 10 == 0;
 
-	const int damage = ATTACK_STATS.at(attack_name).get_damage(PKMN_STATS[player_to_attack.get_chosen_pokemon()].second);
+	const auto [ hp, type_1, type_2 ] = PKMN_STATS[player_to_attack.get_chosen_pokemon()];
+
+	const int damage = ATTACK_STATS.at(attack_name).get_damage(type_1, type_2);
 	const int final_damage = is_critical ? damage * 2 : damage;
 
 	player_to_attack.decrease_health(final_damage);
@@ -41,6 +43,11 @@ Type Attack::get_type() const {
 }
 
 
-int Attack::get_damage(const Type enemy_type) const {
-	return _theorical_damage * TYPE_ATTACK_MULTIPLICATOR_CHART[_type][enemy_type];
+int Attack::get_damage(const Type enemy_type_1, const std::optional<Type> enemy_type_2) const {
+	int real_damage = _theorical_damage * TYPE_ATTACK_MULTIPLICATOR_CHART[_type][enemy_type_1];
+
+	if (enemy_type_2.has_value())
+		real_damage *= TYPE_ATTACK_MULTIPLICATOR_CHART[_type][enemy_type_2.value()];
+
+	return real_damage;
 }

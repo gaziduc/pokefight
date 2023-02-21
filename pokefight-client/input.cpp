@@ -17,7 +17,7 @@ Input::Input(const std::string& title, TTF_Font* font, const std::string& defaul
 	
 }
 
-int Input::show_input_menu(Window& window, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+int Input::show_input_menu(Window& window) {
 	int res = InputEndAction::ENTER;
 
 	while (true) {
@@ -59,9 +59,9 @@ int Input::show_input_menu(Window& window, std::shared_ptr<Texture> title_textur
 		}
 
 		window.render_clear();
-		menu_texture->render_without_pos_dst(window);
-		title_texture->set_pos_dst(window.get_width() / 2 - title_texture->get_width() / 2, 80);
-		title_texture->render(window);
+		window.get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(window);
+		window.get_texture(Picture::TITLE)->set_pos_dst(window.get_width() / 2 - window.get_texture(Picture::TITLE)->get_width() / 2, 80);
+		window.get_texture(Picture::TITLE)->render(window);
 		render_input(window);
 		window.render_present();
 	}

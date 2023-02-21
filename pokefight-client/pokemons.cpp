@@ -31,9 +31,13 @@ std::shared_ptr<Anim> Pokemons::get_pokemon_back_anim_ptr(const size_t pokemon_n
 }
 
 int Pokemons::get_initial_health_points(const int pokemon_num) const {
-	return PKMN_STATS[pokemon_num].first;
+	return std::get<0>(PKMN_STATS[pokemon_num]);
 }
 
-Type Pokemons::get_pokemon_type(const int pokemon_num) const {
-	return PKMN_STATS[pokemon_num].second;
+Type Pokemons::get_pokemon_first_type(const int pokemon_num) const {
+	return std::get<1>(PKMN_STATS[pokemon_num]);
+}
+
+std::optional<Type> Pokemons::get_pokemon_second_type(const int pokemon_num) const {
+	return std::get<2>(PKMN_STATS[pokemon_num]);
 }

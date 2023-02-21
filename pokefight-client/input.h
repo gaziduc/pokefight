@@ -24,7 +24,7 @@ private:
 public:
 	Input(const std::string& title, TTF_Font* font, const std::string& default_input_value, const bool replace_spaces);
 	
-	int show_input_menu(Window& window, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture);
+	int show_input_menu(Window& window);
 	std::string get_current_input() const;
 	
 	const SDL_Color _text_color = { 0, 0, 0, 255 };

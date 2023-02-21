@@ -75,6 +75,9 @@ void Window::init() {
 	// Load common textures
 	_pics.add_texture(*this, Picture::MENU_SELECTED, "data/selected.png");
 	_pics.add_texture(*this, Picture::POKEBALL_ICON, "data/pokeball.png");
+	_pics.add_texture(*this, Picture::MENU_BACKGROUND, "data/menu.png");
+	_pics.add_texture(*this, Picture::FIGHT_BACKGROUND, "data/fight.png");
+	_pics.add_texture(*this, Picture::TITLE, "data/title.png");
 
 	// Fonts
 	_fonts.emplace(FontSize::VERY_SMALL, TTF_OpenFont("data/segoeui.ttf", 18));
@@ -181,14 +184,14 @@ void Window::press_up_key(const int key) {
 }
 
 void Window::update_events() {
-	_events.update_events();
+	_events.update_events(*this);
 }
 
 Events& Window::get_events() {
 	return _events;
 }
 
-void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+void Window::settings_menu(const Pokemons& pokemons) {
 	Menu menu(std::nullopt, get_font(FontSize::NORMAL), 600);
 	menu.add_choice(SettingsMenu::NICKNAME, "Change nickname");
 	menu.add_choice(SettingsMenu::POKEMON, "Change pokemon");
@@ -214,28 +217,15 @@ void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> ti
 			switch (menu.get_selected_choice_num())
 			{
 			case SettingsMenu::NICKNAME:
-				if (ask_nickname_if_necessary(true, title_texture, menu_texture))
+				if (ask_nickname_if_necessary(true))
 					_settings.save_settings();
 				break;
 			case SettingsMenu::POKEMON:
-				if (ask_pokemon_if_necessary(true, pokemons, title_texture, menu_texture))
+				if (ask_pokemon_if_necessary(true, pokemons))
 					_settings.save_settings();
 				break;
 			case SettingsMenu::TOOGLE_FULLSCREEN:
-				if (_settings.get_is_fullscreen()) {
-					SDL_SetWindowFullscreen(_window, 0);
-					_settings.set_is_fullscreen(false);
-				}
-				else {
-					SDL_DisplayMode displayMode;
-					SDL_GetCurrentDisplayMode(0, &displayMode);
-					SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
-					SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
-					_settings.set_is_fullscreen(true);
-				}
-			
-				_settings.save_settings();
-
+				toggle_full_screen();
 				break;
 			case SettingsMenu::BACK_TO_MAIN_MENU:
 				return;
@@ -247,9 +237,9 @@ void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> ti
 		menu.update_selected_choice_from_events(get_events());
 
 		render_clear();
-		menu_texture->render_without_pos_dst(*this);
-		title_texture->set_pos_dst(get_width() / 2 - title_texture->get_width() / 2, 80);
-		title_texture->render(*this);
+		get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(*this);
+		get_texture(Picture::TITLE)->set_pos_dst(get_width() / 2 - get_texture(Picture::TITLE)->get_width() / 2, 80);
+		get_texture(Picture::TITLE)->render(*this);
 		std::shared_ptr<Anim> chosed_anim_ptr = pokemons.get_pokemon_anim_ptr(_settings.get_pokemon_num());
 		chosed_anim_ptr->set_pos_dst(get_width() / 2 - chosed_anim_ptr->get_width() / 2, get_height() / 2 - chosed_anim_ptr->get_height() / 2 - 50);
 		chosed_anim_ptr->render_anim(*this, true);
@@ -259,11 +249,11 @@ void Window::settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> ti
 }
 
 
-bool Window::ask_nickname_if_necessary(const bool forceAsk, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+bool Window::ask_nickname_if_necessary(const bool forceAsk) {
 	if (forceAsk || _settings.get_nickname().empty()) {
 		do {
 			Input input_nickname("Enter your nickname:", get_font(FontSize::NORMAL), _settings.get_nickname(), true);
-			input_nickname.show_input_menu(*this, title_texture, menu_texture);
+			input_nickname.show_input_menu(*this);
 			_settings.set_nickname(input_nickname.get_current_input());
 		} while (_settings.get_nickname().empty());
 
@@ -273,7 +263,7 @@ bool Window::ask_nickname_if_necessary(const bool forceAsk, std::shared_ptr<Text
 	return false;
 }
 
-bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture) {
+bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list) {
 	if (_settings.get_pokemon_num() == -1 || forceAsk) {
 		Menu choose_pkmn_menu("Choose your Pokemon:", get_font(FontSize::NORMAL), 600);
 		for (int choice_num = 0; choice_num < pokemon_list.get_num_pokemons(); choice_num++) {
@@ -308,9 +298,9 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 			}
 
 			render_clear();
-			menu_texture->render_without_pos_dst(*this);
-			title_texture->set_pos_dst(get_width() / 2 - title_texture->get_width() / 2, 80);
-			title_texture->render(*this);
+			get_texture(Picture::MENU_BACKGROUND)->render_without_pos_dst(*this);
+			get_texture(Picture::TITLE)->set_pos_dst(get_width() / 2 - get_texture(Picture::TITLE)->get_width() / 2, 80);
+			get_texture(Picture::TITLE)->render(*this);
 
 			Uint64 alpha = SDL_GetTicks64() % 512;
 			if (alpha > 255)
@@ -421,4 +411,19 @@ void Window::load_and_play_music(const std::string& music_to_load_path) {
 	}
 
 	Mix_PlayMusic(_music, -1);
+}
+
+void Window::toggle_full_screen() {
+	if (_settings.get_is_fullscreen()) {
+		SDL_SetWindowFullscreen(_window, 0);
+		_settings.set_is_fullscreen(false);
+	} else {
+		SDL_DisplayMode displayMode;
+		SDL_GetCurrentDisplayMode(0, &displayMode);
+		SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
+		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
+		_settings.set_is_fullscreen(true);
+	}
+
+	_settings.save_settings();
 }

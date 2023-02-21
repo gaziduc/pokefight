@@ -24,5 +24,6 @@ public:
 	std::shared_ptr<Anim> get_pokemon_anim_ptr(const size_t pokemon_num) const;
 	std::shared_ptr<Anim> get_pokemon_back_anim_ptr(const size_t pokemon_num) const;
 	int get_initial_health_points(const int pokemon_num) const;
-	Type get_pokemon_type(const int pokemon_num) const;
+	Type get_pokemon_first_type(const int pokemon_num) const;
+	std::optional<Type> get_pokemon_second_type(const int pokemon_num) const;
 };

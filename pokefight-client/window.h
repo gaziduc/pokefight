@@ -26,6 +26,7 @@ enum Sound {
 
 // Forward declaration
 class Toaster;
+class Events;
 
 class Window {
 private:
@@ -70,10 +71,10 @@ public:
 	Events& get_events();
 
 	// Settings
-	void settings_menu(const Pokemons& pokemons, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture);
+	void settings_menu(const Pokemons& pokemons);
 	Settings& get_settings();
-	bool ask_nickname_if_necessary(const bool forceAsk, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture);
-	bool ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list, std::shared_ptr<Texture> title_texture, std::shared_ptr<Texture> menu_texture);
+	bool ask_nickname_if_necessary(const bool forceAsk);
+	bool ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokemon_list);
 
 	// Toasters
 	void add_toaster(const std::string& toaster_message);
@@ -83,4 +84,5 @@ public:
 	void show_toasters();
 
 	void load_and_play_music(const std::string& music_to_load_path);
+	void toggle_full_screen();
 };

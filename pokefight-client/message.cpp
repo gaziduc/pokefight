@@ -31,6 +31,7 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 		}
 
 		window.render_clear();
+		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 
@@ -42,8 +43,6 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 			SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 			SDL_DestroyTexture(texture);
 		}
-
-		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		window.render_present();
 	}
@@ -59,6 +58,7 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 			exit(0);
 
 		window.render_clear();
+		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 		SDL_RenderDrawRect(window.get_renderer(), &pos_dst);
@@ -72,8 +72,6 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 		pos_dst.y -= pos_dst.h;
 		SDL_RenderCopy(window.get_renderer(), texture, nullptr, &pos_dst);
 		SDL_DestroyTexture(texture);
-
-		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		window.render_present();
 

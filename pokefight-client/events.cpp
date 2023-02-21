@@ -1,3 +1,4 @@
+#include "window.h"
 #include "events.h"
 #include <SDL2/SDL.h>
 #include <string>
@@ -31,7 +32,7 @@ bool Events::is_focus_lost() const {
     return _focus_lost;
 }
 
-void Events::update_events() {
+void Events::update_events(Window& window) {
     _quit = false;
     _text = "";
 
@@ -68,5 +69,11 @@ void Events::update_events() {
         default:
             break;
         }
+    }
+
+    if (_keys[SDL_SCANCODE_F11]) {
+        press_up_key(SDL_SCANCODE_F11);
+
+        window.toggle_full_screen();
     }
 }

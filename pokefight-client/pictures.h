@@ -7,7 +7,10 @@
 
 enum Picture {
 	MENU_SELECTED = 0,
-	POKEBALL_ICON = 1
+	POKEBALL_ICON = 1,
+	MENU_BACKGROUND = 2,
+	FIGHT_BACKGROUND = 3,
+	TITLE = 4
 };
 
 // forward declaration
