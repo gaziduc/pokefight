@@ -17,6 +17,8 @@ inline static const std::vector<std::tuple<int, Type, std::optional<Type>>> PKMN
 	{ 300, Type::WATER, std::nullopt }, // Balstoise
 	{ 250, Type::ELECTRIC, std::nullopt }, // Raichu
 	{ 330, Type::PSYCHIC, std::nullopt }, // Mewtwo
+	{ 315, Type::DRAGON, Type::GROUND }, // Garchomp
+	{ 250, Type::DARK, std::nullopt }, // Zoroark
 };
 
 inline static const std::vector<std::vector<std::string>> PKMN_ATTACKS = {
@@ -24,7 +26,9 @@ inline static const std::vector<std::vector<std::string>> PKMN_ATTACKS = {
 	{ "Tackle", "Fire Blast", "Air Cutter", "Flamethrower" }, // Charizard
 	{ "Tackle", "Hydro Pump", "Ice Beam", "Rock Slide" },  // Balstoise
 	{ "Thunder", "Surf", "Facade", "Take Down" }, // Raichu
-	{ "Future Sight", "Psychic", "Blizzard", "Shadow Ball" } // Mewtwo
+	{ "Future Sight", "Psychic", "Blizzard", "Shadow Ball" }, // Mewtwo
+	{ "Take Down", "Draco Meteor", "Flamethrower", "Dig" }, // Garchomp
+	{ "Foul Play", "Shadow Ball", "U-turn", "Body Slam" } // Zoroark
 };
 
 inline static const std::map<std::string, Attack> ATTACK_STATS = {
@@ -45,7 +49,12 @@ inline static const std::map<std::string, Attack> ATTACK_STATS = {
 	{ "Future Sight", { 120, Type::PSYCHIC }},
 	{ "Psychic", { 90, Type::PSYCHIC }},
 	{ "Blizzard", { 110, Type::ICE }},
-	{ "Shadow Ball", { 80, Type::GHOST }}
+	{ "Shadow Ball", { 80, Type::GHOST }},
+	{ "Draco Meteor", { 130, Type::DRAGON }},
+	{ "Dig", { 80, Type::GROUND }},
+	{ "Foul Play", { 95, Type::DARK }},
+	{ "U-turn", { 70, Type::BUG }},
+	{ "Body Slam", { 85, Type::NORMAL_TYPE }}
 };
 
 inline static const float TYPE_ATTACK_MULTIPLICATOR_CHART[NUM_TYPES][NUM_TYPES] = {

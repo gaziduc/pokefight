@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
 		pokemon_list.add_pokemon("Blastoise", std::make_shared<Anim>(window, "data/anims/front/ani_bw_009.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_009.gif"));
 		pokemon_list.add_pokemon("Raichu", std::make_shared<Anim>(window, "data/anims/front/ani_bw_026_m.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_026_m.gif"));
 		pokemon_list.add_pokemon("Mewtwo", std::make_shared<Anim>(window, "data/anims/front/ani_bw_150.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_150.gif"));
+		pokemon_list.add_pokemon("Garchomp", std::make_shared<Anim>(window, "data/anims/front/ani_bw_445_m.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_445_m.gif"));
+		pokemon_list.add_pokemon("Zoroark", std::make_shared<Anim>(window, "data/anims/front/ani_bw_571.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_571.gif"));
 
 		Menu menu(std::nullopt, window.get_font(FontSize::NORMAL), 600);
 		menu.add_choice(MainMenu::FIGHT_ONLINE_PLAYERS, "Fight online players");
