@@ -15,6 +15,7 @@
 #include "../pokefight-common/ip.h"
 #include "../pokefight-common/player.h"
 #include "../pokefight-common/const.h"
+#include "../pokefight-common/attack.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_framerate.h>
 #include <SDL2/SDL_ttf.h>
@@ -38,6 +39,8 @@ int main(int argc, char *argv[])
 		pokemon_list.add_pokemon("Venusaur", std::make_shared<Anim>(window, "data/anims/front/ani_bw_003_m.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_003_m.gif"));
 		pokemon_list.add_pokemon("Charizard", std::make_shared<Anim>(window, "data/anims/front/ani_bw_006.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_006.gif"));
 		pokemon_list.add_pokemon("Blastoise", std::make_shared<Anim>(window, "data/anims/front/ani_bw_009.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_009.gif"));
+		pokemon_list.add_pokemon("Raichu", std::make_shared<Anim>(window, "data/anims/front/ani_bw_026_m.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_026_m.gif"));
+		pokemon_list.add_pokemon("Mewtwo", std::make_shared<Anim>(window, "data/anims/front/ani_bw_150.gif"), std::make_shared<Anim>(window, "data/anims/back/a-b_bw_150.gif"));
 
 		Menu menu(std::nullopt, window.get_font(FontSize::NORMAL), 600);
 		menu.add_choice(MainMenu::FIGHT_ONLINE_PLAYERS, "Fight online players");
@@ -437,9 +440,10 @@ void battle(Window& window, TCPsocket socket, SDLNet_SocketSet socket_set, std::
 
 			attack.clear();
 			
-			Menu attack_menu("Which attack?", window.get_font(FontSize::NORMAL), 600);
+			AttackMenu attack_menu("Which attack?", window.get_font(FontSize::NORMAL), 600);
 			for (int attack_num = 0; attack_num < PKMN_ATTACKS[my_player_ptr->get_chosen_pokemon()].size(); attack_num++) {
-				attack_menu.add_choice(attack_num, PKMN_ATTACKS[my_player_ptr->get_chosen_pokemon()][attack_num]);
+				auto attack_name = PKMN_ATTACKS[my_player_ptr->get_chosen_pokemon()][attack_num];
+				attack_menu.add_choice(attack_num, attack_name, ATTACK_STATS.at(attack_name).get_type());
 			}
 
 			do {

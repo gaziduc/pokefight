@@ -27,7 +27,7 @@ enum Type {
 	GHOST,
 	DRAGON,
 	DARK,
-	STELL,
+	STEEL,
 	FAIRY,
 	NUM_TYPES
 };

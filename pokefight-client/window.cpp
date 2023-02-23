@@ -78,6 +78,24 @@ void Window::init() {
 	_pics.add_texture(*this, Picture::MENU_BACKGROUND, "data/menu.png");
 	_pics.add_texture(*this, Picture::FIGHT_BACKGROUND, "data/fight.png");
 	_pics.add_texture(*this, Picture::TITLE, "data/title.png");
+	_pics.add_texture(*this, Picture::NORMAL_PIC, "data/types/normal.png");
+	_pics.add_texture(*this, Picture::FIRE_PIC, "data/types/fire.png");
+	_pics.add_texture(*this, Picture::WATER_PIC, "data/types/water.png");
+	_pics.add_texture(*this, Picture::ELECTRIC_PIC, "data/types/electric.png");
+	_pics.add_texture(*this, Picture::GRASS_PIC,"data/types/grass.png");
+	_pics.add_texture(*this, Picture::ICE_PIC,"data/types/ice.png");
+	_pics.add_texture(*this, Picture::FIGHTING_PIC, "data/types/fighting.png");
+	_pics.add_texture(*this, Picture::POISON_PIC,"data/types/poison.png");
+	_pics.add_texture(*this, Picture::GROUND_PIC,"data/types/ground.png");
+	_pics.add_texture(*this, Picture::FLYING_PIC, "data/types/flying.png");
+	_pics.add_texture(*this, Picture::PSYCHIC_PIC,"data/types/psychic.png");
+	_pics.add_texture(*this, Picture::BUG_PIC,"data/types/bug.png");
+	_pics.add_texture(*this, Picture::ROCK_PIC,"data/types/rock.png");
+	_pics.add_texture(*this, Picture::GHOST_PIC,"data/types/ghost.png");
+	_pics.add_texture(*this, Picture::DRAGON_PIC,"data/types/dragon.png");
+	_pics.add_texture(*this, Picture::DARK_PIC,"data/types/dark.png");
+	_pics.add_texture(*this, Picture::STEEL_PIC,"data/types/steel.png");
+	_pics.add_texture(*this, Picture::FAIRY_PIC, "data/types/fairy.png");
 
 	// Fonts
 	_fonts.emplace(FontSize::VERY_SMALL, TTF_OpenFont("data/segoeui.ttf", 18));
@@ -311,17 +329,30 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 			SDL_Color selected_text_color = { 0, 0, 0, alpha };
 
 			for (int choice_num = 0; choice_num < pokemon_list.get_num_pokemons(); choice_num++) {
-				pokemon_list.get_pokemon_anim_ptr(choice_num)->set_pos_dst(get_width() / 2 + ((choice_num - 1) * 200) - pokemon_list.get_pokemon_anim_ptr(choice_num)->get_width() / 2, get_height() / 2 - pokemon_list.get_pokemon_anim_ptr(choice_num)->get_height() / 2 - 150);
+				auto anim = pokemon_list.get_pokemon_anim_ptr(choice_num);
+				anim->set_pos_dst(get_width() / 2 + ((choice_num - 2) * 200) - anim->get_width() / 2, get_height() / 2 - anim->get_height() / 2 - 200);
 				pokemon_list.get_pokemon_anim_ptr(choice_num)->render_anim(*this, true);
 
 				SDL_Rect pos_dst;
 				
 				SDL_Texture* texture = get_text_texture(*this, get_font(FontSize::NORMAL), pokemon_list.get_pokemon_name(choice_num), choice_num == choose_pkmn_menu.get_selected_choice_num() ? selected_text_color : unselected_text_color);
 				SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
-				pos_dst.x = get_width() / 2 + ((choice_num - 1) * 200) - pos_dst.w / 2;
-				pos_dst.y = get_height() / 2 - 75;
+				pos_dst.x = get_width() / 2 + ((choice_num - 2) * 200) - pos_dst.w / 2;
+				pos_dst.y = get_height() / 2 - 125;
 				SDL_RenderCopy(get_renderer(), texture, nullptr, &pos_dst);
 				SDL_DestroyTexture(texture);
+
+				Type first_type = pokemon_list.get_pokemon_first_type(choice_num);
+				Texture* type_texture = get_texture((Picture) first_type);
+				type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 2) * 200) - type_texture->get_width() / 2, get_height() / 2 - 50);
+				type_texture->render(*this);
+
+				if (pokemon_list.get_pokemon_second_type(choice_num).has_value()) {
+					Type second_type = pokemon_list.get_pokemon_second_type(choice_num).value();
+					Texture* second_type_texture = get_texture((Picture) second_type);
+					second_type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 2) * 200) - type_texture->get_width() / 2, get_height() / 2 - 10);
+					second_type_texture->render(*this);
+				}
 			}
 			choose_pkmn_menu.render_menu(*this);
 			render_present();

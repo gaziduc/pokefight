@@ -41,14 +41,14 @@ void Settings::load_settings() {
 		try {
 			_is_fullscreen = (bool)std::stoi(is_fullscreen);
 		} catch (const std::exception& exception) {
-			_is_fullscreen = true;
+			_is_fullscreen = false;
 		}
 
 		settings_file_read.close();
 	}
 	else {
 		_pokemon_num = -1;
-		_is_fullscreen = true;
+		_is_fullscreen = false;
 	}
 }
 

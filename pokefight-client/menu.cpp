@@ -133,3 +133,29 @@ void Menu::render_rect_and_pokeballs(const Window& window, SDL_Rect *pos_dst) {
 	pokeball->set_pos_dst(pos_dst->x + pos_dst->w - pokeball->get_width() / 2, pos_dst->y + pos_dst->h - pokeball->get_height() / 2);
 	pokeball->render(window);
 }
+
+
+AttackMenu::AttackMenu(const std::optional<std::string>& title, TTF_Font* font, const int width) : Menu(title, font, width) {
+
+}
+
+void AttackMenu::add_choice(const int choice_num, const std::string& str, const Type attack_type) {
+	_choices.emplace(choice_num, str);
+	_attack_types.emplace_back(attack_type);
+}
+
+void AttackMenu::render_menu(const Window& window) {
+	Menu::render_menu(window);
+
+	const int num_choices = (int)_choices.size();
+
+	const int y = window.get_height() - (int)(num_choices + 2) * 50;
+	const int h = window.get_height() - y - 50;
+
+	// Choices
+	for (size_t choice_num = 0; choice_num < num_choices; choice_num++) {
+		Picture type_pic = (Picture) _attack_types[choice_num];
+		window.get_texture(type_pic)->set_pos_dst(window.get_width() / 2 + _width / 2 - window.get_texture(type_pic)->get_width() - 50, y + 35 + choice_num * 50);
+		window.get_texture(type_pic)->render(window);
+	}
+}

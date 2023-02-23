@@ -35,7 +35,7 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 
 		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
 
-		std::string to_show(message.substr(0, num_letters_to_show));
+		std::string to_show(utf8_substr(message, 0, num_letters_to_show));
 		if (!to_show.empty()) {
 			SDL_Texture* texture = get_text_texture(window, window.get_font(FontSize::NORMAL), to_show, text_color, is_utf8);
 			SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
