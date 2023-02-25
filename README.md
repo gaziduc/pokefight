@@ -9,7 +9,7 @@ One of the players should launch the server (i.e. download pokefight-server.zip,
 
 ![image](https://user-images.githubusercontent.com/25725722/221357508-8b624b8d-3354-40b4-bf22-8c1a5365ceb2.png)
 
-Then all the cleint that want to play must enter the ip/hostname of the server. And then enter the port.
+Then all the client that want to play must enter the ip/hostname of the server. And then enter the port.
 
 ![image](https://user-images.githubusercontent.com/25725722/221357556-cfc7150b-6db0-43b8-b63c-de437cf4939e.png)
 ![image](https://user-images.githubusercontent.com/25725722/221357567-7597146f-4c55-4a69-b754-ae0a5c08f4ef.png)
