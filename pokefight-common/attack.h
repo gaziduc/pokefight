@@ -51,6 +51,4 @@ public:
 
 	int get_theorical_damage() const;
 	Type get_type() const;
-
-	int get_damage(const Type enemy_type, const std::optional<Type> enemy_type_2) const;
 };

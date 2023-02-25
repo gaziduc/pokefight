@@ -254,7 +254,6 @@ int main(int argc, char* argv[]) {
 								Player& potential_attacked_player = potential_attacked_pair.second;
 								if (potential_attacked_player.get_nickname() == nickname_to_attack) {
 									message_to_send += send_attack_to_clients(attack_name, potential_attacked_player, player.get_nickname(), client_list);
-									message_to_send += MESSAGE_DELIMITER;
 								}
 							}
 						}

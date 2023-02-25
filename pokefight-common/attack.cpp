@@ -16,16 +16,23 @@ std::string send_attack_to_clients(
 	std::string message_to_send = "TO_CLIENT_ATTACK";
 	message_to_send += MESSAGE_WORD_DELIMITER + attack_name + MESSAGE_WORD_DELIMITER + player_to_attack.get_nickname() + MESSAGE_WORD_DELIMITER + attacking_player + MESSAGE_WORD_DELIMITER;
 
-	const bool is_critical = std::rand() % 10 == 0;
+	const bool is_critical = std::rand() % 16 == 0;
 
 	const auto [ hp, type_1, type_2 ] = PKMN_STATS[player_to_attack.get_chosen_pokemon()];
 
-	const int damage = ATTACK_STATS.at(attack_name).get_damage(type_1, type_2);
-	const int final_damage = is_critical ? damage * 2 : damage;
+	Attack attack = ATTACK_STATS.at(attack_name);
+
+	float type_coeff = TYPE_ATTACK_MULTIPLICATOR_CHART[attack.get_type()][type_1];
+
+	if (type_2.has_value())
+		type_coeff *= TYPE_ATTACK_MULTIPLICATOR_CHART[attack.get_type()][type_2.value()];
+
+	int real_damage = attack.get_theorical_damage() * type_coeff;
+	const int final_damage = is_critical ? real_damage * 2 : real_damage;
 
 	player_to_attack.decrease_health(final_damage);
 
-	message_to_send += std::to_string(final_damage) + MESSAGE_WORD_DELIMITER + std::to_string(is_critical) + MESSAGE_DELIMITER;
+	message_to_send += std::to_string(final_damage) + MESSAGE_WORD_DELIMITER + std::to_string(is_critical) + MESSAGE_WORD_DELIMITER + std::to_string(type_coeff) + MESSAGE_DELIMITER;
 	return message_to_send;
 }
 
@@ -40,14 +47,4 @@ int Attack::get_theorical_damage() const {
 
 Type Attack::get_type() const {
 	return _type;
-}
-
-
-int Attack::get_damage(const Type enemy_type_1, const std::optional<Type> enemy_type_2) const {
-	int real_damage = _theorical_damage * TYPE_ATTACK_MULTIPLICATOR_CHART[_type][enemy_type_1];
-
-	if (enemy_type_2.has_value())
-		real_damage *= TYPE_ATTACK_MULTIPLICATOR_CHART[_type][enemy_type_2.value()];
-
-	return real_damage;
 }

@@ -52,8 +52,6 @@ void Window::init() {
 	// Settings
 	_settings.load_settings();
 
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-
 	_window = SDL_CreateWindow(_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 	if (_window == nullptr)
 		throw std::runtime_error("Error while creating window:\n" + std::string(SDL_GetError()));
@@ -66,7 +64,7 @@ void Window::init() {
 		SDL_DisplayMode displayMode;
 		SDL_GetCurrentDisplayMode(0, &displayMode);
 		SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
-		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
+		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	}
 
 	// Enable blending (alpha)
@@ -287,7 +285,6 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 		for (int choice_num = 0; choice_num < pokemon_list.get_num_pokemons(); choice_num++) {
 			choose_pkmn_menu.add_choice(choice_num, pokemon_list.get_pokemon_name(choice_num));
 			std::shared_ptr<Anim> anim_ptr = pokemon_list.get_pokemon_anim_ptr(choice_num);
-			
 		}
 
 		SDL_Color unselected_text_color = { 0, 0, 0, 255 };
@@ -338,19 +335,19 @@ bool Window::ask_pokemon_if_necessary(const bool forceAsk, const Pokemons& pokem
 				SDL_Texture* texture = get_text_texture(*this, get_font(FontSize::NORMAL), pokemon_list.get_pokemon_name(choice_num), choice_num == choose_pkmn_menu.get_selected_choice_num() ? selected_text_color : unselected_text_color);
 				SDL_QueryTexture(texture, nullptr, nullptr, &pos_dst.w, &pos_dst.h);
 				pos_dst.x = get_width() / 2 + ((choice_num - 3) * 200) - pos_dst.w / 2;
-				pos_dst.y = get_height() / 2 - 155;
+				pos_dst.y = get_height() / 2 - 170;
 				SDL_RenderCopy(get_renderer(), texture, nullptr, &pos_dst);
 				SDL_DestroyTexture(texture);
 
 				Type first_type = pokemon_list.get_pokemon_first_type(choice_num);
 				Texture* type_texture = get_texture((Picture) first_type);
-				type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 3) * 200) - type_texture->get_width() / 2, get_height() / 2 - 80);
+				type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 3) * 200) - type_texture->get_width() / 2, get_height() / 2 - 95);
 				type_texture->render(*this);
 
 				if (pokemon_list.get_pokemon_second_type(choice_num).has_value()) {
 					Type second_type = pokemon_list.get_pokemon_second_type(choice_num).value();
 					Texture* second_type_texture = get_texture((Picture) second_type);
-					second_type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 3) * 200) - type_texture->get_width() / 2, get_height() / 2 - 40);
+					second_type_texture->set_pos_dst(get_width() / 2 + ((choice_num - 3) * 200) - type_texture->get_width() / 2, get_height() / 2 - 55);
 					second_type_texture->render(*this);
 				}
 			}
@@ -452,7 +449,7 @@ void Window::toggle_full_screen() {
 		SDL_DisplayMode displayMode;
 		SDL_GetCurrentDisplayMode(0, &displayMode);
 		SDL_SetWindowSize(_window, displayMode.w, displayMode.h);
-		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN);
+		SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		_settings.set_is_fullscreen(true);
 	}
 

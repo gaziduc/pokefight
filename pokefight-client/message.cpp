@@ -6,10 +6,9 @@
 #include <string>
 #include <SDL2/SDL.h>
 
-void Message::show_message_battle(Window& window, const std::string& message, const bool is_utf8, const Pokemons& pokemons, const std::shared_ptr<Player>& my_player_ptr, const std::vector<std::shared_ptr<Player>>& other_players_ptr) {
+void Message::show_message_battle(Window& window, const std::string& message, const bool is_utf8, const Pokemons& pokemons, const std::shared_ptr<Player>& my_player_ptr, const std::vector<std::shared_ptr<Player>>& other_players_ptr, SDL_Color text_color) {
 	int finished = false;
 	Uint64 first_ticks = SDL_GetTicks64();
-	SDL_Color text_color = { 0, 0, 0, 255 };
 
 	while (!finished) {
 		window.update_events();
@@ -61,7 +60,6 @@ void Message::show_message_battle(Window& window, const std::string& message, co
 		render_battlefield(window, pokemons, my_player_ptr, other_players_ptr);
 
 		SDL_Rect pos_dst = { .x = 80, .y = window.get_height() - 80, .w = 0, .h = 0 };
-		SDL_RenderDrawRect(window.get_renderer(), &pos_dst);
 
 		if (ticks - first_ticks >= 1000) {
 			text_color.a = first_ticks - ticks + 1255;
